@@ -107,9 +107,10 @@ public class PlayerData
     // Mission management
 
     // Will add missions until we reach 2 missions.
+    // 미션 UI에서 보여질 미션 갯수
     public void CheckMissionsCount()
     {
-        while (missions.Count < 2)
+        while (missions.Count < 3)
             AddMission();
     }
 
