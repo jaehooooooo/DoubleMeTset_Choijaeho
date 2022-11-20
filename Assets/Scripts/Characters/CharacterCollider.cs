@@ -117,8 +117,9 @@ public class CharacterCollider : MonoBehaviour
             else
             {
 				Coin.coinPool.Free(c.gameObject);
-                PlayerData.instance.coins += 1;
-				controller.coins += 1;
+				// 스코어 배수에 따라 물고기 코인도 배수 만큼 늘어남
+                PlayerData.instance.coins += 1 * controller.trackManager.multiplier;
+				controller.coins += 1 * controller.trackManager.multiplier;
 				m_Audio.PlayOneShot(coinSound);
             }
         }
