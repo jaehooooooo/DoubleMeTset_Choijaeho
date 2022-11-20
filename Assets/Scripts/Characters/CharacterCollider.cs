@@ -129,6 +129,9 @@ public class CharacterCollider : MonoBehaviour
 
             controller.StopMoving();
 
+			// 콤보 초기화
+			controller.trackManager.ChangeComboCount(0);
+
 			c.enabled = false;
 
             Obstacle ob = c.gameObject.GetComponent<Obstacle>();

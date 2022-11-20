@@ -32,6 +32,8 @@ public class GameState : AState
 	public Text distanceText;
     public Text multiplierText;
 	public Text countdownText;
+    // 콤보 카운트 Text
+    public Text comboCountText;
     public RectTransform powerupZone;
 	public RectTransform lifeRectTransform;
 
@@ -84,6 +86,10 @@ public class GameState : AState
     protected int m_CurrentSegmentObstacleIndex = 0;
     protected TrackSegment m_NextValidSegment = null;
     protected int k_ObstacleToClear = 3;
+
+    // 콤보 숫자 최소 최대 크기
+    protected const int minConboTextSize = 50;
+    protected const int maxComboTextSize = 150;
 
     public override void Enter(AState from)
     {
@@ -353,7 +359,24 @@ public class GameState : AState
 
 		distanceText.text = Mathf.FloorToInt(trackManager.worldDistance).ToString() + "m";
 
-		if (trackManager.timeToStart >= 0)
+        
+        // trackManager의 콤보 값 체크로 UI 변경
+        if(trackManager.combo.ToString() != comboCountText.text)
+        {
+            // 콤보가 초기화 되었다면
+            if (trackManager.combo == 0)
+                comboCountText.enabled = false;
+
+            // 콤보 변경 코루틴 실행
+            else
+            {
+                if (!comboCountText.enabled)
+                    comboCountText.enabled = true;
+                StartCoroutine(ChangeComboText());
+            }
+        }
+
+        if (trackManager.timeToStart >= 0)
 		{
 			countdownText.gameObject.SetActive(true);
 			countdownText.text = Mathf.Ceil(trackManager.timeToStart).ToString();
@@ -391,6 +414,22 @@ public class GameState : AState
                 OpenGameOverPopup();
         }
 	}
+
+    // 콤보 숫자 변경 코루틴
+    IEnumerator ChangeComboText()
+    {
+        // Text의 사이즈를 줄였다가 순간적으로 커지는 기능
+        comboCountText.text = trackManager.combo.ToString();
+        comboCountText.fontSize = minConboTextSize;
+        while (true)
+        {
+            if (comboCountText.fontSize > maxComboTextSize)
+                break;
+            comboCountText.fontSize += 10;
+            yield return new WaitForSeconds(0.001f);
+        }
+        comboCountText.fontSize = maxComboTextSize;
+    }
 
     protected void ClearPowerup()
     {

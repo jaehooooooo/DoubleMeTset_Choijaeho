@@ -266,6 +266,8 @@ public class CharacterInputController : MonoBehaviour
                 // We slid to (or past) the required length, go back to running
 				StopSliding();
 			}
+			// 슬라이딩 하는 동안에만 Combo Ray 체크
+			trackManager.CheckObstacleBarrier();
 		}
 
         if(m_Jumping)
@@ -295,9 +297,12 @@ public class CharacterInputController : MonoBehaviour
 					m_Jumping = false;
 				}
 			}
-        }
 
-        characterCollider.transform.localPosition = Vector3.MoveTowards(characterCollider.transform.localPosition, verticalTargetPosition, laneChangeSpeed * Time.deltaTime);
+			// 점프 하는 동안에만 Combo Ray 체크
+			trackManager.CheckObstacleBarrier();
+		}
+
+		characterCollider.transform.localPosition = Vector3.MoveTowards(characterCollider.transform.localPosition, verticalTargetPosition, laneChangeSpeed * Time.deltaTime);
 
         // Put blob shadow under the character.
         RaycastHit hit;

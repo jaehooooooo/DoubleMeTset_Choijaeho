@@ -67,6 +67,8 @@ public class TrackManager : MonoBehaviour
 
     public int score { get { return m_Score; } }
     public int multiplier { get { return m_Multiplier; } }
+    // 콤보 카운트
+    public int combo { get { return m_Combo; } }
     public float currentSegmentDistance { get { return m_CurrentSegmentDistance; } }
     public float worldDistance { get { return m_TotalWorldDistance; } }
     public float speed { get { return m_Speed; } }
@@ -113,6 +115,13 @@ public class TrackManager : MonoBehaviour
     protected int m_Score;
     protected float m_ScoreAccum;
     protected bool m_Rerun;     // This lets us know if we are entering a game over (ads) state or starting a new game (see GameState)
+                                
+    // 콤보 카운트
+    protected int m_Combo;
+    protected const int k_colliderCount = 10;   // 콜라이더에서 검출할 배열의 크기
+    private Collider[] m_Hits = new Collider[k_colliderCount];
+    // 이전에 충돌한 적 있는 Obstacle
+    private Obstacle m_Previous;
 
     protected bool m_IsTutorial; //Tutorial is a special run that don't chance section until the tutorial step is "validated" by the TutorialState.
     
@@ -128,7 +137,11 @@ public class TrackManager : MonoBehaviour
     protected const int k_DesiredSegmentCount = 10;
     protected const float k_SegmentRemovalDistance = -30f;
     protected const float k_Acceleration = 0.2f;
-    
+
+    // 장애물 레이어 넘버
+    protected const int k_ObstacleLayer = 9;
+
+
     protected void Awake()
     {
         m_ScoreAccum = 0.0f;
@@ -234,6 +247,8 @@ public class TrackManager : MonoBehaviour
 
             m_Score = 0;
             m_ScoreAccum = 0;
+            // 콤보 카운트 초기화
+            m_Combo = 0;
 
             m_SafeSegementLeft = m_IsTutorial ? 0 : k_StartingSafeSegments;
 
@@ -435,8 +450,9 @@ public class TrackManager : MonoBehaviour
 
         if (!m_IsTutorial)
         {
+            // 플레이어 속도(배경 이동속도) 변경하는 부분 // 콤보에 따라 속도 변경
             if (m_Speed < maxSpeed)
-                m_Speed += k_Acceleration * Time.deltaTime;
+                m_Speed += (k_Acceleration * Time.deltaTime + m_Combo * 0.01f);
             else
                 m_Speed = maxSpeed;
         }
@@ -673,5 +689,46 @@ public class TrackManager : MonoBehaviour
     {
         int finalAmount = amount;
         m_Score += finalAmount * m_Multiplier;
+    }
+
+    // 점프 or 슬라이딩으로 Barrier통과시 콤보 추가
+    public void CheckObstacleBarrier()
+    {
+        // 점프 or 슬라이딩 하는 기간에 OverlapBox로 Barrier체크
+        Vector3 boxsize = characterController.characterCollider.collider.size + new Vector3(0.3f, 2f, 0.3f);
+        Vector3 boxCenter = characterController.transform.position;
+
+        m_Hits = Physics.OverlapBox(boxCenter, boxsize * 0.5f);
+
+        for (int i = 0; i < m_Hits.Length; i++) 
+        {
+            // 충돌한 물체가 장애물 Layer이고 Barrier종류라면
+            if (m_Hits[i].gameObject.layer == k_ObstacleLayer && m_Hits[i].name.Contains("Barrier"))
+            {
+                Obstacle obs = m_Hits[i].GetComponent<Obstacle>();
+
+                if (obs != null)
+                {
+                    // 중복된 물체가 아님으로 콤보 추가
+                    if (obs != m_Previous)
+                    {
+                        // 콤보카운트 1 추가
+                        ChangeComboCount(1);
+                    }
+                    m_Previous = obs;
+                }
+            }
+        }
+    }
+
+    // 콤보 카운트 변경
+    public void ChangeComboCount(int count)
+    {
+        // 0이 입력되면(장애물에 닿으면) 콤보 카운트 초기화 및 원래 스피드로 돌아옴
+        if (count == 0)
+            m_Combo = 0;
+        // 카운트 추가
+        else
+            m_Combo += count;
     }
 }
